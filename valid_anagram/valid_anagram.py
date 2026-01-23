@@ -9,3 +9,14 @@ class Solution:
             if sCount[char] < 0: 
                 return False
         return True
+
+def main():
+    program = Solution()
+    # s = "jar"
+    # t = "jam"
+    s = "racecar"
+    t = "carrace"
+    print (program.isAnagram(s, t))
+
+if __name__ == "__main__":
+    main()
