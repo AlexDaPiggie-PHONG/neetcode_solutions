@@ -8,16 +8,13 @@ class Solution:
         start = 0
         for idx, char in enumerate(nums):
             while q and char > q[-1]:
-                print (f"DEBUG: queue = {q}, result = {result}")
                 q.pop()
             q.append(char)
-            print (f"DEBUG: queue = {q}, result = {result}")
             if idx + 1 >= k:
                 result.append(q[0])
                 if nums[start] == q[0]:
                     q.popleft()
                 start += 1
-            
         return result
 
 alex = Solution()
