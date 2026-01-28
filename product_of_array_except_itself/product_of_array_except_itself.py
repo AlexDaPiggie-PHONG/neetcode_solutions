@@ -7,7 +7,6 @@ class Solution:
             right[i] = right[i - 1] * nums[len(nums) - i]
         for i in range (len(nums)):
             result.append(left[i] * right[len(nums) - i - 1])
-            print (f"DEBUG: result = {result}")
         return result
     
 nums = [1,2,4,6]

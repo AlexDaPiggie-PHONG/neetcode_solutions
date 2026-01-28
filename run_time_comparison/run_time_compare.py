@@ -1,110 +1,169 @@
-from collections import defaultdict
+from collections import deque
 class Solution:
-    def myfunction(self, s: str, k: int) -> int:
-        result = freq = start = 0
-        count = defaultdict(str)
-        for end in range (len(s)): 
-            count[s[end]] = count.get(s[end], 0) + 1
-            freq = max(freq, count[s[end]])
-                
-            while (end - start + 1) - freq > k:
-                count[s[start]] -= 1
+    def first_function(self, nums: list[int], k: int) -> list[int]:
+        if not nums: return []
+        if k == 1: return nums
+        q = deque()
+        result = []
+        start = 0
+        for idx, char in enumerate(nums):
+            while q and char > q[-1]:
+                q.pop()
+            q.append(char)
+            if idx + 1 >= k:
+                result.append(q[0])
+                if nums[start] == q[0]:
+                    q.popleft()
                 start += 1
-                freq = max(count.values())
-
-            result = max(result, end - start + 1)
-        return result 
+        return result
     
-    def comparefunction(self, s: str, k: int) -> int:
-        res = 0
-        charSet = set(s)
+    def second_function(self, nums: list[int], k: int) -> list[int]:
+        queue = deque()
+        result = []
+        # building phase
+        for i in range(k):
+            while queue and nums[queue[-1]] < nums[i]:
+                queue.pop()
+            queue.append(i)
+        result.append(nums[queue[0]])
+        for i in range(k, len(nums)):
+            if queue[0] <= i - k:
+                queue.popleft()
+            while queue and nums[i] > nums[queue[-1]]:
+                queue.pop()
+            queue.append(i)
+            result.append(nums[queue[0]])
+        return result
 
-        for c in charSet:
-            count = l = 0
-            for r in range(len(s)):
-                if s[r] == c:
-                    count += 1
-
-                while (r - l + 1) - count > k:
-                    if s[l] == c:
-                        count -= 1
-                    l += 1
-
-                res = max(res, r - l + 1)
-        return res
-    
 alex = Solution()
+nums = [1,2,1,0,4,2,6]
+k = 3 #2,2,4,4,6
 
-s = "XYYX" #4
-k = 2
-s = "ABAB" #1
-k = 0
-s="AAABABB" #5
-k = 1
+nums = [1,2,3,2,3,3,6,4,5]
+k = 3 #3,3,3,3,6,6,6
 
+nums = [3,2,1,2,2,4,5,6]
+k = 3 #3,2,2,4,5,6
+
+nums = [9,8,7,6,11,10,9,8,7]
+k = 3 #
+
+#======================= FUNCTIONS END ===================================
+                
 
 #Tools
 from time import perf_counter
+from time import sleep
 import argparse
 import os
-alex = Solution()
+from rich.console import Console
+
+console = Console()
+
 os.system('cls')
+
+#Format color
+def print_color (text = "", end = "\n", style = "sea_green2"):
+    console.print(f"{text}", end = end, style = style)
 
 #Show progress bar
 def progress (prog, total):
     percent = 100 * (prog / total) 
-    bar = '█' * int(percent) + '-' * int(100 - percent)
-    print (f"\r|{bar}| {percent:.2f}%", end = "\r")
+    if total < 500:
+        bar = '█' * int(percent // 1.4) + '-' * int((100 - percent) // 1.4)
+    else:
+        bar = '█' * int(percent // 0.95) + '-' * int((100 - percent) // 0.95)
+    print_color (f"\r[bold plum1]│[/bold plum1]{bar}[bold plum1]│[/bold plum1] [bold steel_blue1]{percent:.2f}%[/bold steel_blue1]", end = "\r")
 
 #Modes to choose from 
 def parse():
     mode = argparse.ArgumentParser()
-    command = mode.add_mutually_exclusive_group()
-    command.add_argument("--t", action = "store_true")
-    command.add_argument("--a", action = "store_true")
+    mode.add_argument("--t", action = "store_true", )
+    mode.add_argument("--p", action = "store_true")
+    mode.add_argument("--num", dest ="num", type = int)
     return mode.parse_args()
 
 #Compare time performance
-me = neetcode = iter = 0
-minTime, maxTime = 1000, 0
+first = second = iter = 0
+minTime1, maxTime1, avg1 = 1e10, 0.0, 0.0
+minTime2, maxTime2, avg2 = 1e10, 0.0, 0.0
 
 args = parse()
 show_time = args.t
-show_all= args.a
+show_progress = args.p
 
-trials = 20
+trials = 1000
+if args.num:
+    trials = int(args.num)
+    
 
-for _ in range (trials):
-    iter += 1
+for iter in range (1, trials + 1):
+
+    #Estimate each run time
     start = perf_counter()
-    for _ in range (int(1e4)):
-        alex.myfunction(s, k)
+    for _ in range (1000):
+        alex.first_function(nums, k)
 
     time1 = perf_counter() - start
-    minTime = min(minTime, time1)
-    maxTime = max(maxTime, time1)
+    minTime1 = min(minTime1, time1)
+    maxTime1 = max(maxTime1, time1)
+    avg1 += time1 / trials
 
     start = perf_counter()
-    for _ in range (int(1e4)):
-        alex.comparefunction(s, k)
+    for _ in range (1000):
+        alex.second_function(nums, k)
     time2 = perf_counter() - start
+    minTime2 = min(minTime2, time2)
+    maxTime2 = max(maxTime2, time2)
+    avg2 += time2 / trials
 
-    if show_time or show_all:
-        print (f"\nTEST: time1 = {time1 * 1000: .6f} ms")
-        print (f"TEST: time2 = {time2 * 1000: .6f} ms\n")
+    #Update winning score
+    if time1 < time2: 
+        first += 1
+    else: 
+        second += 1
 
-    if time2 < time1: neetcode += 1
-    else: me += 1
+    #Display
+
+    if not show_progress:
+        print_color (f"\nTEST: time1 = [bold steel_blue1]{time1 * 1000: .6f} ms[/bold steel_blue1]")
+        print_color (f"TEST: time2 = [bold steel_blue1]{time2 * 1000: .6f} ms[/bold steel_blue1]")
 
     if not show_time:
         progress(iter, trials)
 
-print()
-print('\n                                DONE TESTING!!!')
-print ('------------------------------------------------------------------------------------------')
-if me > neetcode: print ("REPORT: My performance is better")
-else: print ("neetcode is better")
-print (f"REPORT: DONE TESTING HIHI!!!")
-print (f"REPORT: My performance over 200 time is: {me / trials * 100}%")
-print (f"REPORT: Min time is {minTime* 1000: .3f} ms and max time is {maxTime* 1000: .3f} ms")
-print ('------------------------------------------------------------------------------------------')
+#Format output
+if not (show_progress or show_time):
+    sleep(0.25)
+    os.system('cls')
+
+print_color()
+print_color(f"\n                                   [bold steel_blue1]DONE TESTING!!![/bold steel_blue1]")
+print_color ("                ┌──────────────────────────────────────────────────────────────┐ ")
+
+if first > second:
+    print_color ("                │       [bold plum1]REPORT: FIRST function has BETTER performance[bold plum1]          │")
+    print_color ("                │                                                              │")
+    print_color (f"                │       REPORT: [bold plum1]WINNING RATE[/bold plum1] of [bold plum1]FIRST[/bold plum1] function is: [bold plum1]{first / trials * 100:5.1f}%[/bold plum1]      │")
+
+
+else: 
+    print_color ("                │       [bold underline bold plum1]REPORT: SECOND function has BETTER performance[/bold underline bold plum1]         │")
+    print_color ("                │                                                              │")
+    print_color (f"                │       REPORT: [bold plum1]WINNING RATE[/bold plum1] of [bold plum1]SECOND[/bold plum1] function is: [bold plum1]{second/ trials* 100:5.1f}%[/bold plum1]     │")
+
+print_color ("                │                                                              │")
+print_color (f"                │       REPORT: RUN TIME OF FIRST FUNCTION:                    │\r")                  
+print_color (f"\r                │       ┌───────────────────────┐                              │\n"
+       f"                │       │ min     = [bold steel_blue1]{minTime1* 1000: 8.3f} ms[/bold steel_blue1] │                              │\n"
+       f"                │       │ max     = [bold steel_blue1]{maxTime1* 1000: 8.3f} ms[/bold steel_blue1] │                              │\n"
+       f"                │       │ average = [bold steel_blue1]{avg1 * 1000: 8.3f} ms[/bold steel_blue1] │                              │\n"
+       f"                │       └───────────────────────┘                              │\r")
+
+print_color (f"\r                │       REPORT: RUN TIME OF SECOND FUNCTION:                   │\r")
+print_color (f"\r                │       ┌───────────────────────┐                              │\n"
+       f"                │       │ min     = [bold steel_blue1]{minTime2* 1000: 8.3f} ms[/bold steel_blue1] │                              │\n"
+       f"                │       │ max     = [bold steel_blue1]{maxTime2* 1000: 8.3f} ms[/bold steel_blue1] │                              │\n"
+       f"                │       │ average = [bold steel_blue1]{avg2 * 1000: 8.3f} ms[/bold steel_blue1] │                              │\n"
+       f"                │       └───────────────────────┘                              │")
+print_color (f"                └──────────────────────────────────────────────────────────────┘")
